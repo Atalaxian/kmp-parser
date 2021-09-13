@@ -2,6 +2,7 @@ import time
 import re
 import textwrap
 import requests
+import sys
 from bs4 import BeautifulSoup
 from main_window import Ui_Form
 from PyQt5.QtWidgets import QApplication, QWidget, QFileDialog
@@ -153,12 +154,12 @@ class Window(QWidget, Ui_Form):
             list_story.append(Story(story, set_text_story))
         start_keywords = [x.lower().replace(' ', '') for x in self.keywords_ui.toPlainText().split(',')]
         # Фильтрация по заданным правилам
-        for keyword in start_keywords:
+        for keyword in start_keywords.copy():
             if '|' in keyword:
                 list_filter_values = [x for x in re.sub(r'[^\w\s]', ',', keyword).split(',')]
                 set_filter_keywords = set(list_filter_values)
                 for elem in list_story:
-                    if set_filter_keywords.isdisjoint(elem.set_text_story):
+                    if elem.valid and set_filter_keywords.isdisjoint(elem.set_text_story):
                         elem.valid = False
                         num_remove_story_with_filter += 1
                 start_keywords.remove(keyword)
@@ -204,15 +205,13 @@ class Window(QWidget, Ui_Form):
         file_path = QFileDialog.getSaveFileName(self, "Выбрать файл", "",
                                                 "*.txt;;")[0]
         if file_path != '':
-            with open(file_path, 'w') as file:
+            with open(file_path, 'w', encoding='UTF-8') as file:
                 for story in self.story_with_coincidence:
                     file.write(textwrap.fill(story.text_story, width=160))
                     file.write('\n\n')
 
 
 if __name__ == '__main__':
-    import sys
-
     app = QApplication(sys.argv)
     w = Window()
     w.show()
